@@ -9,9 +9,13 @@ import kotlin.test.assertEquals
 class GreetingTest :Spek({
     describe("Versioning"){
         on("get version"){
-            it("split"){
+            it("incrementVersion"){
                 assertEquals("0.1.4", incrementVersion("0.1.3"))
                 assertEquals("0.1.4-SNAPSHOT", incrementVersion("0.1.3-SNAPSHOT"))
+            }
+            it("getCommitHash"){
+                val commitData = getCommitHash()
+                println(commitData)
             }
         }
     }
