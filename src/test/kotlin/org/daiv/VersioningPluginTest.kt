@@ -6,7 +6,7 @@ import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
 import kotlin.test.assertEquals
 
-class GreetingTest :Spek({
+class VersioningPluginTest :Spek({
     describe("Versioning"){
         on("get version"){
             it("incrementVersion"){

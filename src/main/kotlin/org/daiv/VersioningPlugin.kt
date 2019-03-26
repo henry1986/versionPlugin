@@ -6,6 +6,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import java.io.File
+import java.time.Instant
 import java.util.*
 
 data class CommitData(
@@ -63,30 +64,46 @@ fun incrementVersion(version: String): String {
 
 open class VersionConfiguration {
     var versionProperty: String? = null
-    var propertiesFile: String = "version.properties"
+    var propertiesFile: String = "gradle.properties"
+    var releaseFile: String = "version.properties"
     var getCommitHash: Boolean = true
+    var versionUpdate: Boolean = false
     override fun toString(): String {
         return "versionProp: $versionProperty"
     }
 }
 
-class GreetingPlugin : Plugin<Project> {
+class VersioningPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        val versionConfiguration =
+        val config =
             project.extensions.create<VersionConfiguration>("versionConfiguration", VersionConfiguration::class.java)
         project.task("incrementVersion") { task: Task ->
             task.doLast {
-                if (versionConfiguration.getCommitHash) {
-
+                val versionProp = Properties()
+                val propertiesFile = project.file(config.propertiesFile!!)
+                val property = config.versionProperty!!
+                val propProp = Properties()
+                propProp.load(propertiesFile.inputStream())
+                val version = propProp.getProperty(property)
+                if (config.getCommitHash) {
+                    val commit = getCommitHash()
+                    versionProp.setProperty(property, version)
+                    versionProp.setProperty("longCommitHash", commit.longCommitHash)
+                    versionProp.setProperty("shortCommitHash", commit.shortCommitHash)
+                    versionProp.setProperty("userName", commit.userName)
+                    versionProp.setProperty("userEmail", commit.userEmail)
+                    versionProp.setProperty("date UTC", Instant.now().toString())
+                    val releasePath = "${project.buildDir}/${config.releaseFile!!}"
+                    println(releasePath)
+                    val releaseFile = project.file(releasePath)
+                    versionProp.store(releaseFile.bufferedWriter(), null)
                 }
-                val prop = Properties()
-                val file = project.file(versionConfiguration.propertiesFile!!)
-                prop.load(file.inputStream())
-                val property = versionConfiguration.versionProperty!!
-                val version = prop.getProperty(property)
-                prop.setProperty(property, incrementVersion(version))
-                prop.store(file.bufferedWriter(), null)
-                println("next minor version set: ${incrementVersion(version)}")
+                if (config.versionUpdate) {
+                    propProp.load(propertiesFile.inputStream())
+                    propProp.setProperty(property, incrementVersion(version))
+                    propProp.store(propertiesFile.bufferedWriter(), null)
+                    println("next minor version set: ${incrementVersion(version)}")
+                }
             }
         }
     }

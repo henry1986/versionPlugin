@@ -7,6 +7,7 @@ buildscript {
     }
 
     dependencies {
+        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.0'
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4+"
     }
 }
@@ -17,9 +18,10 @@ plugins {
     id 'groovy'
     id 'org.jetbrains.kotlin.jvm' version '1.3.11'
 }
+apply plugin: 'org.junit.platform.gradle.plugin'
 
 group 'org.daiv'
-version '0.0.11-SNAPSHOT'
+version '0.0.14-SNAPSHOT'
 
 sourceCompatibility = 1.8
 
@@ -49,7 +51,7 @@ gradlePlugin {
     plugins {
         simplePlugin {
             id = 'org.daiv.versioning'
-            implementationClass = 'org.daiv.GreetingPlugin'
+            implementationClass = 'org.daiv.VersioningPlugin'
         }
     }
 }
@@ -101,6 +103,13 @@ publishing {
 //            artifact sourceJar
 //            artifact dokkaJavadoc
 //            artifact javadocJar
+        }
+    }
+}
+junitPlatform {
+    filters {
+        engines {
+            include 'spek'
         }
     }
 }
