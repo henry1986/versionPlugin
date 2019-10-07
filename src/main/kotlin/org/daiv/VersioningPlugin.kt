@@ -64,6 +64,7 @@ fun incrementVersion(version: String): String {
 
 open class VersionConfiguration {
     var versionProperty: String? = null
+    var versionProperties: List<String> = emptyList()
     var propertiesFile: String = "gradle.properties"
     var releaseFile: String = "version.properties"
     var getCommitHash: Boolean = true
@@ -71,6 +72,17 @@ open class VersionConfiguration {
     override fun toString(): String {
         return "versionProp: $versionProperty"
     }
+}
+
+fun Properties.incrementVersion(versionProperties: List<String>, propertiesFile: File) {
+    load(propertiesFile.inputStream())
+
+    versionProperties.forEach { versionProperty ->
+        val version = getProperty(versionProperty)
+        setProperty(versionProperty, incrementVersion(version))
+    }
+    store(propertiesFile.bufferedWriter(), null)
+//    println("next minor version set: ${incrementVersion(version)}")
 }
 
 class VersioningPlugin : Plugin<Project> {
@@ -81,13 +93,13 @@ class VersioningPlugin : Plugin<Project> {
             task.doLast {
                 val versionProp = Properties()
                 val propertiesFile = project.file(config.propertiesFile!!)
-                val property = config.versionProperty!!
+                val versionProperty = config.versionProperty!!
                 val propProp = Properties()
                 propProp.load(propertiesFile.inputStream())
-                val version = propProp.getProperty(property)
+                val version = propProp.getProperty(versionProperty)
                 if (config.getCommitHash) {
                     val commit = getCommitHash()
-                    versionProp.setProperty(property, version)
+                    versionProp.setProperty(versionProperty, version)
                     versionProp.setProperty("longCommitHash", commit.longCommitHash)
                     versionProp.setProperty("shortCommitHash", commit.shortCommitHash)
                     versionProp.setProperty("userName", commit.userName)
@@ -100,10 +112,15 @@ class VersioningPlugin : Plugin<Project> {
                 }
                 if (config.versionUpdate) {
                     propProp.load(propertiesFile.inputStream())
-                    propProp.setProperty(property, incrementVersion(version))
+                    propProp.setProperty(versionProperty, incrementVersion(version))
                     propProp.store(propertiesFile.bufferedWriter(), null)
                     println("next minor version set: ${incrementVersion(version)}")
                 }
+            }
+        }
+        project.task("incrementVersions") { task: Task ->
+            task.doLast {
+                Properties().incrementVersion(config.versionProperties, project.file(config.propertiesFile!!))
             }
         }
     }
